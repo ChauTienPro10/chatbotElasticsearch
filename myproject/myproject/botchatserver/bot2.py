@@ -1,6 +1,7 @@
 import json
 import google.generativeai as genai
 import os
+from .elasticSearch import format_results_course,retrieve_documents_course,retrieve_documents_teacher,format_results_teacher
 os.chdir(r'.\myproject\botchatserver')
 file_path = os.path.join( 'data.json')
 # Cấu hình API key
@@ -17,6 +18,7 @@ generation_config = {
 # Thêm hướng dẫn hệ thống để chỉ trả lời dựa trên lịch sử
 system_instruction = """
 Bạn là trợ lý AI và chỉ được trả lời dựa trên các câu trả lời có sẵn trong lịch sử chat. 
+Bạn không được trả lời quá 50 ký tự.
 Nếu không có câu trả lời phù hợp, hãy trả lời: "Tôi không thể trả lời vấn đề của bạn."
 """
 
@@ -34,7 +36,7 @@ with open(file_path, 'r', encoding='utf-8') as file:
 chat_session = model.start_chat(history=chat_data["history"])
 
 # Gửi câu hỏi
-require_question="Hãy cho biết mục đích của câu hỏi sau liên quan đến chủ đề khóa học hay chủ đề giáo viên hay chủ đề khuyến mãi bạn chỉ cần trả lời 'khóa học' hoặc 'giáo viên' hoặc 'khuyến mãi':"
+require_question="Hãy cho biết mục đích của câu hỏi sau liên quan đến chủ đề khóa học hay chủ đề giáo viên hay chủ đề khuyến mãi bạn chỉ cần trả lời 'course' hoặc 'teacher' hoặc 'sales'. nếu không có chủ đề nào liên quan hãy trả lời 'no topic':"
 user_question =  "'hiện có mã giảm giá nào?' "
 # response = chat_session.send_message(require_question+' '+user_question)
 
@@ -53,4 +55,18 @@ def handle_string(_text):
         return res.text
     
 
-print(handle_string("Thầy nào dạy toán"))
+def answer(question,topic):
+    if(topic=='no topic'):
+        res=chat_session.send_message(question)
+        return json.dumps({"title":res.text}, ensure_ascii=False)
+    else:
+        if (topic=='course'):
+            documents=retrieve_documents_course(question)
+            formatted_output = format_results_course(documents)
+            return formatted_output
+        elif(topic=='teacher'):
+            documents=retrieve_documents_teacher(question)
+            formatted_output = format_results_teacher(documents)
+            return formatted_output
+        else:
+            return json.dumps({"title":topic}, ensure_ascii=False)

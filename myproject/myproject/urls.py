@@ -17,8 +17,10 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from .services.chat import get_users
+from .services.chat import get_Chat
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('public/hello/',get_users)
+    path('public/hello/',get_users),
+    path('public/chat',get_Chat)
 ]
